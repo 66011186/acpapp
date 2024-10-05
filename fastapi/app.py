@@ -2,9 +2,12 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
-from database import *  # Ensure your database functions are correctly imported
+from database import *  
+
 
 app = FastAPI()
+
+app.include_router(router, prefix="/api")
 
 # Pydantic model for user creation
 class UserCreate(BaseModel):
