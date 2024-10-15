@@ -31,6 +31,7 @@ class UserUpdate(BaseModel):
 
 # Endpoint to create a new user
 @router.post("/users/create", response_model=User)
+@router.post("/users/create", response_model=User)
 async def create_user(user: UserCreate):
    # Check if the username already exists
    existing_user = await get_user(user.name)
@@ -42,6 +43,9 @@ async def create_user(user: UserCreate):
    if result is None:
        raise HTTPException(status_code=400, detail="Error creating user")
    return result
+
+
+
 
 # Endpoint to get a user by user_id
 @router.get("/users/{id}", response_model=User)

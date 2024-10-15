@@ -6,8 +6,9 @@ from fastapi import HTTPException
 # Database configuration
 POSTGRES_USER = "temp"
 POSTGRES_PASSWORD = "temp"
-POSTGRES_DB = "advcompro"
+POSTGRES_DB = "advcompro2"
 POSTGRES_HOST = "db"
+
 
 DATABASE_URL = f'postgresql+asyncpg://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}/{POSTGRES_DB}'
 
@@ -16,13 +17,13 @@ database = Database(DATABASE_URL)
 
 # Connect to the database
 async def connect_db():
-    await database.connect()
-    print("Database connected")
+   await database.connect()
+   print("Database connected")
 
 # Disconnect from the database
 async def disconnect_db():
-    await database.disconnect()
-    print("Database disconnected")
+   await database.disconnect()
+   print("Database disconnected")
 
 # Function to insert a new user into the users table
 async def insert_user(name: str, age: int, height: float, sex: str, email: str):
@@ -48,6 +49,7 @@ async def update_user(id: int, name: str, age: int, height: float, sex: str, ema
     """
     values = {"name": name, "age": age, "height": height, "sex": sex, "email": email}
     return await database.fetch_one(query=query, values=values)
+
 
 # Function to delete a user from the users table
 async def delete_user(id: int):
