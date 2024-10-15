@@ -1,5 +1,9 @@
 from databases import Database
+from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, Float, TIMESTAMP, func
+from sqlalchemy.sql import select
+from fastapi import HTTPException
 
+# Database configuration
 POSTGRES_USER = "temp"
 POSTGRES_PASSWORD = "temp"
 POSTGRES_DB = "advcompro"
@@ -7,46 +11,45 @@ POSTGRES_HOST = "db"
 
 DATABASE_URL = f'postgresql+asyncpg://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}/{POSTGRES_DB}'
 
+# Initialize database connection
 database = Database(DATABASE_URL)
 
+# Connect to the database
 async def connect_db():
     await database.connect()
     print("Database connected")
 
+# Disconnect from the database
 async def disconnect_db():
     await database.disconnect()
     print("Database disconnected")
 
-
 # Function to insert a new user into the users table
-async def insert_user(username: str, password_hash: str, email: str):
+async def insert_user(name: str, age: int, height: float, sex: str, email: str):
     query = """
-    INSERT INTO users (username, password_hash, email)
-    VALUES (:username, :password_hash, :email)
-    RETURNING user_id, username, password_hash, email, created_at
+    INSERT INTO users (name, age, height, sex, email)
+    VALUES (:name, :age, :height, :sex, :email)
+    RETURNING id, name, age, height, sex, email, created_at
     """
-    values = {"username": username, "password_hash": password_hash, "email": email}
+    values = {"name": name, "age": age, "height": height, "sex": sex, "email": email}
     return await database.fetch_one(query=query, values=values)
 
-# Function to select a user by user_id from the users table
-async def get_user(user_id: int):
-    query = "SELECT * FROM users WHERE user_id = :user_id"
-    return await database.fetch_one(query=query, values={"user_id": user_id})
+# Function to select a user by name from the users table
+async def get_user(name: str):
+    query = "SELECT * FROM users WHERE name = :name"
+    return await database.fetch_one(query=query, values={"name": name})
 
-# Function to update a user in the users table
-async def update_user(user_id: int, username: str, password_hash: str, email: str):
+async def update_user(id: int, name: str, age: int, height: float, sex: str, email: str):
     query = """
     UPDATE users 
-    SET username = :username, password_hash = :password_hash, email = :email
-    WHERE user_id = :user_id
-    RETURNING user_id, username, password_hash, email, created_at
+    SET name = :name, age = :age, height = :height, sex = :sex, email = :email
+    WHERE id = :id
+    RETURNING id, name, age, height, sex, email, created_at
     """
-    values = {"user_id": user_id, "username": username, "password_hash": password_hash, "email": email}
+    values = {"name": name, "age": age, "height": height, "sex": sex, "email": email}
     return await database.fetch_one(query=query, values=values)
 
 # Function to delete a user from the users table
-async def delete_user(user_id: int):
-    query = "DELETE FROM users WHERE user_id = :user_id RETURNING *"
-    return await database.fetch_one(query=query, values={"user_id": user_id})
-
-
+async def delete_user(id: int):
+   query = "DELETE FROM users WHERE id = :id RETURNING *"
+   return await database.fetch_one(query=query, values={"id": id})
