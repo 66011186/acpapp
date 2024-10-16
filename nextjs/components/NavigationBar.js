@@ -11,8 +11,7 @@ import {
 } from "@mui/material";
 import { useRouter } from "next/router";
 import Link from "next/link";
-import FunctionsIcon from "@mui/icons-material/Functions";
-import Divider from "@mui/material/Divider";
+import HomeIcon from '@mui/icons-material/Home';
 import PersonIcon from "@mui/icons-material/Person";
 import useBearStore from "@/store/useBearStore";
 
@@ -25,7 +24,7 @@ const NavigationLayout = ({ children }) => {
       <AppBar position="sticky" sx={{ backgroundColor: "#ff5e15" }}>
         <Toolbar>
           <Link href={"/"}>
-            <FunctionsIcon sx={{ color: "#ffffff" }} fontSize="large" />
+            <HomeIcon sx={{ color: "#ffffff" }} fontSize="large" />
           </Link>
           <Typography
             variant="body1"
@@ -39,6 +38,12 @@ const NavigationLayout = ({ children }) => {
             {appName}
           </Typography>
           <NavigationLink href="/page1" label="Page1" />
+          <div style={{ flexGrow: 1 }} />
+          <NavigationLink href="/page2" label="Page2" />
+          <div style={{ flexGrow: 1 }} />
+          <NavigationLink href="/page3" label="Page3" />
+          <div style={{ flexGrow: 1 }} />
+          <NavigationLink href="/page4" label="Update Data" />
           <div style={{ flexGrow: 1 }} />
           <Button
             color="#ffffff"
