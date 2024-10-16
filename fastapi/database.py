@@ -7,8 +7,9 @@ from datetime import date
 # Database configuration
 POSTGRES_USER = "temp"
 POSTGRES_PASSWORD = "temp"
-POSTGRES_DB = "advcompro"
+POSTGRES_DB = "advcompro2"
 POSTGRES_HOST = "db"
+
 
 DATABASE_URL = f'postgresql+asyncpg://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}/{POSTGRES_DB}'
 
@@ -17,8 +18,8 @@ database = Database(DATABASE_URL)
 
 # Connect to the database
 async def connect_db():
-    await database.connect()
-    print("Database connected")
+   await database.connect()
+   print("Database connected")
 
 # Disconnect from the database
 async def disconnect_db():
@@ -61,6 +62,7 @@ async def update_user(id: int, name: str, age: int, height: float, sex: str, ema
         "email": email
     }
     return await database.fetch_one(query=query, values=values)
+
 
 # Function to delete a user from the users table
 async def delete_user(id: int):
