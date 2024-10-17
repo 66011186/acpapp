@@ -22,10 +22,11 @@ const NavigationLayout = ({ children }) => {
   return (
     <>
       <AppBar position="sticky" sx={{ backgroundColor: "#ff5e15" }}>
-        <Toolbar>
+        <Toolbar sx={{ display: "flex", alignItems: "center" }}>
           <Link href={"/"}>
             <HomeIcon sx={{ color: "#ffffff" }} fontSize="large" />
           </Link>
+          
           <Typography
             variant="body1"
             sx={{
@@ -34,26 +35,30 @@ const NavigationLayout = ({ children }) => {
               color: "#ffffff",
               padding: "0 10px",
               fontFamily: "Prompt",
-            }}>
+            }}
+          >
             {appName}
           </Typography>
-          <NavigationLink href="/page1" label="Page1" />
-          <div style={{ flexGrow: 1 }} />
-          <NavigationLink href="/page2" label="Page2" />
-          <div style={{ flexGrow: 1 }} />
-          <NavigationLink href="/page3" label="Page3" />
-          <div style={{ flexGrow: 1 }} />
-          <NavigationLink href="/page4" label="Update Data" />
-          <div style={{ flexGrow: 1 }} />
+          <Box sx={{ flexGrow: 1 }} />
+          <NavigationLink href="/page1" label="Water" />
+          <Box sx={{ flexGrow: 1 }} />
+          <NavigationLink href="/page2" label="Calories" />
+          <Box sx={{ flexGrow: 1 }} />
+          <NavigationLink href="/page3" label="Exercise" />
+  
+          <Box sx={{ flexGrow: 1 }} /> {/* This creates space between links and the button */}
+  
           <Button
-            color="#ffffff"
+            color="inherit" // Use inherit for better styling
             onClick={() => {
-              router.push("/page2");
-            }}>
+              router.push("/page4");
+            }}
+          >
             <PersonIcon />
           </Button>
         </Toolbar>
       </AppBar>
+      
       <main>{children}</main>
     </>
   );

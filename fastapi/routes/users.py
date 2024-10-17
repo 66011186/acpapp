@@ -36,6 +36,16 @@ class WaterIntake(BaseModel):
     entry_date: date  # This will enforce a date format
     water: float
 
+class CalorieIntake(BaseModel):
+    entry_date: date
+    intake_cal: float
+    burned_cal: float
+    dif_cal: Optional[float] = None
+
+class ExerciseData(BaseModel):
+    entry_date: date  # This will enforce a date format
+    exercise: float   # Exercise hours
+
 # Endpoint to create a new user
 @router.post("/users/create", response_model=User)
 async def create_user(user: UserCreate):
@@ -125,3 +135,94 @@ async def delete_water_data(user_id: int, entry_date: str):
     if result is None:
         raise HTTPException(status_code=404, detail="Water data not found for the given date")
     return {"detail": "Water data deleted"}
+
+# Endpoint to get calorie data for a user
+@router.get("/calorie_data/{user_id}")
+async def get_calorie_data(user_id: int):
+    query = f"""
+    SELECT entry_date, intake_cal, burned_cal, dif_cal
+    FROM calorie_data
+    WHERE user_id = {user_id}
+    ORDER BY entry_date DESC
+    LIMIT 7
+    """
+    results = await database.fetch_all(query=query)
+    if not results:
+        raise HTTPException(status_code=404, detail="No calorie data found for this user")
+    return results
+
+# Endpoint to submit calorie intake data
+@router.post("/calorie_data/{user_id}", response_model=CalorieIntake)
+async def submit_calorie_data(user_id: int, calorie_intake: CalorieIntake):
+    # Check if user exists before upserting calorie data
+    existing_user = await get_user(user_id)
+
+    if not existing_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Calculate dif_cal
+    dif_cal = calorie_intake.intake_cal - calorie_intake.burned_cal
+
+    # Upsert calorie data
+    result = await upsert_calorie_data(
+        user_id=user_id,
+        entry_date=calorie_intake.entry_date,
+        intake_cal=calorie_intake.intake_cal,
+        burned_cal=calorie_intake.burned_cal,
+        dif_cal=dif_cal  # Pass the calculated value
+    )
+    if result is None:
+        raise HTTPException(status_code=400, detail="Error saving calorie data")
+
+    return result
+
+# Endpoint to delete calorie intake data
+@router.delete("/calorie_data/{user_id}/{entry_date}")
+async def delete_calorie_data(user_id: int, entry_date: date):
+    result = await delete_calorie_data(user_id, entry_date)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Calorie data not found for the given date")
+    return {"detail": "Calorie data deleted"}
+
+# Endpoint to get exercise data for a user
+@router.get("/exercise_data/{user_id}")
+async def get_exercise_data(user_id: int):
+    query = """
+    SELECT entry_date, SUM(exercise) as total_exercise
+    FROM exercise_data
+    WHERE user_id = :user_id
+    GROUP BY entry_date
+    ORDER BY entry_date DESC
+    LIMIT 7
+    """
+    results = await database.fetch_all(query=query, values={"user_id": user_id})
+    if not results:
+        raise HTTPException(status_code=404, detail="No exercise data found for this user")
+    return results
+
+# Endpoint to submit exercise data
+@router.post("/exercise_data/{user_id}", response_model=ExerciseData)
+async def submit_exercise_data(user_id: int, exercise_data: ExerciseData):
+    # Check if user exists before upserting exercise data
+    existing_user = await get_user(user_id)  # Ensure you have this function in database.py
+
+    if not existing_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    result = await upsert_exercise_data(
+        user_id=user_id,
+        entry_date=exercise_data.entry_date,
+        exercise=exercise_data.exercise
+    )
+    if result is None:
+        raise HTTPException(status_code=400, detail="Error saving exercise data")
+
+    return result
+
+# Endpoint to delete exercise data
+@router.delete("/exercise_data/{user_id}/{entry_date}")
+async def delete_exercise_data(user_id: int, entry_date: date):
+    result = await delete_exercise_data(user_id, entry_date)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Exercise data not found for the given date")
+    return {"detail": "Exercise data deleted"}

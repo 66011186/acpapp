@@ -1,14 +1,15 @@
 import Head from "next/head";
-import { Box, Typography, Button, Snackbar, TextField } from "@mui/material";
+import { Box, Typography, Button, Snackbar, TextField, Card, CardContent } from "@mui/material";
 import { useState } from "react";
-import { LineChart } from '@mui/x-charts/LineChart';
+import { BarChart } from '@mui/x-charts/BarChart'; // Import BarChart
 import { axisClasses } from '@mui/x-charts/ChartsAxis';
 import { startOfWeek } from 'date-fns';
 
 function Page2() {
-    const [data, setData] = useState([]);
+    const [data, setData] = useState({ intake: [], burned: [], difference: [] });
     const [userId, setUserId] = useState('');
-    const [waterIntake, setWaterIntake] = useState('');
+    const [intakeCal, setIntakeCal] = useState('');
+    const [burnedCal, setBurnedCal] = useState('');
     const [entryDate, setEntryDate] = useState('');
     const [openSnackbar, setOpenSnackbar] = useState(false);
     const [snackbarSeverity, setSnackbarSeverity] = useState('success');
@@ -16,7 +17,7 @@ function Page2() {
 
     const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-    const handleGetWaterData = async () => {
+    const handleGetCalorieData = async () => {
         if (!userId) {
             setOpenSnackbar(true);
             setSnackbarSeverity('error');
@@ -25,7 +26,7 @@ function Page2() {
         }
 
         try {
-            const response = await fetch(`/api/water_data/${encodeURIComponent(userId)}`, {
+            const response = await fetch(`/api/calorie_data/${encodeURIComponent(userId)}`, {
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json' },
             });
@@ -35,9 +36,10 @@ function Page2() {
             }
 
             const result = await response.json();
-            console.log('Water data retrieved:', result);
+            console.log('Calorie data retrieved:', result);
 
-            const weeklyData = new Array(7).fill(0);
+            const weeklyIntake = new Array(7).fill(0);
+            const weeklyBurned = new Array(7).fill(0);
             const startOfCurrentWeek = startOfWeek(new Date());
 
             result.forEach(entry => {
@@ -45,25 +47,28 @@ function Page2() {
                 const dayIndex = Math.floor((entryDate - startOfCurrentWeek) / (1000 * 60 * 60 * 24));
 
                 if (dayIndex >= 0 && dayIndex < 7) {
-                    weeklyData[dayIndex] += parseFloat(entry.total_water);
+                    weeklyIntake[dayIndex] += parseFloat(entry.intake_cal);
+                    weeklyBurned[dayIndex] += parseFloat(entry.burned_cal);
                 }
             });
 
-            setData(weeklyData);
+            const weeklyDifference = weeklyIntake.map((intake, index) => intake - weeklyBurned[index]);
+
+            setData({ intake: weeklyIntake, burned: weeklyBurned, difference: weeklyDifference });
             setOpenSnackbar(true);
             setSnackbarSeverity('success');
-            setSnackbarMessage('Water data retrieved successfully.');
+            setSnackbarMessage('Calorie data retrieved successfully.');
 
         } catch (error) {
-            console.error('Error fetching water data:', error);
+            console.error('Error fetching calorie data:', error);
             setOpenSnackbar(true);
             setSnackbarSeverity('error');
-            setSnackbarMessage(`Error fetching water data: ${error.message}`);
+            setSnackbarMessage(`Error fetching calorie data: ${error.message}`);
         }
     };
 
-    const handleSubmitWaterIntake = async () => {
-        if (!userId || !waterIntake || !entryDate) {
+    const handleSubmitCalorieData = async () => {
+        if (!userId || !intakeCal || !burnedCal || !entryDate) {
             setOpenSnackbar(true);
             setSnackbarSeverity('error');
             setSnackbarMessage('Please fill in all fields.');
@@ -71,88 +76,180 @@ function Page2() {
         }
 
         try {
-            const response = await fetch(`/api/water_data/${encodeURIComponent(userId)}`, {
-                method: 'POST', // Assuming POST method for creating/updating water data
+            const response = await fetch(`/api/calorie_data/${encodeURIComponent(userId)}`, {
+                method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ entry_date: entryDate, water: parseFloat(waterIntake) }),
+                body: JSON.stringify({
+                    entry_date: entryDate,
+                    intake_cal: parseFloat(intakeCal),
+                    burned_cal: parseFloat(burnedCal),
+                }),
             });
 
             if (!response.ok) {
                 throw new Error(`HTTP error! Status: ${response.status}`);
             }
 
-            // Fetch updated water data after submitting
-            await handleGetWaterData();
+            await handleGetCalorieData(); // Refresh the data after submission
 
             setOpenSnackbar(true);
             setSnackbarSeverity('success');
-            setSnackbarMessage('Water intake submitted successfully.');
+            setSnackbarMessage('Calorie intake submitted successfully.');
 
             // Clear input fields
-            setWaterIntake('');
+            setIntakeCal('');
+            setBurnedCal('');
             setEntryDate('');
         } catch (error) {
-            console.error('Error submitting water intake:', error);
+            console.error('Error submitting calorie intake:', error);
             setOpenSnackbar(true);
             setSnackbarSeverity('error');
-            setSnackbarMessage(`Error submitting water intake: ${error.message}`);
+            setSnackbarMessage(`Error submitting calorie intake: ${error.message}`);
         }
     };
 
     return (
         <Box textAlign="center" p={4} sx={{ bgcolor: '#1D2127', minHeight: '100vh', color: 'white' }}>
             <Head>
-                <title>Weekly Water Intake</title>
-                <meta name="description" content="Track your weekly water intake" />
+                <title>Weekly Calorie Intake</title>
+                <meta name="description" content="Track your weekly calorie intake" />
             </Head>
-
+    
             <Typography variant="h4" sx={{ mb: 4 }}>
-                Weekly Water Intake
+                Weekly Calorie Intake
             </Typography>
-
-            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 4 }}>
-                <TextField
-                    label="User ID"
-                    variant="outlined"
-                    value={userId}
-                    onChange={(e) => setUserId(e.target.value)}
-                    sx={{ marginRight: 2 }}
-                />
-                <Button variant="contained" color="primary" onClick={handleGetWaterData}>
-                    Fetch Water Data
-                </Button>
-            </Box>
-
-            {/* Input for Water Intake */}
-            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 4 }}>
-                <TextField
-                    label="Water Intake (liters)"
-                    variant="outlined"
-                    value={waterIntake}
-                    onChange={(e) => setWaterIntake(e.target.value)}
-                    sx={{ marginRight: 2 }}
-                />
-                <TextField
-                    label="Entry Date (YYYY-MM-DD)"
-                    variant="outlined"
-                    value={entryDate}
-                    onChange={(e) => setEntryDate(e.target.value)}
-                    sx={{ marginRight: 2 }}
-                />
-                <Button variant="contained" color="primary" onClick={handleSubmitWaterIntake}>
-                    Submit Water Intake
-                </Button>
-            </Box>
+    
+            <Card sx={{ width: 800, backgroundColor: '#292f35', padding: 2, marginBottom: 4 }}>
+                <CardContent>
+                    <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2, flexWrap: 'wrap' }}>
+                        <TextField
+                            label="User ID"
+                            variant="outlined"
+                            value={userId}
+                            onChange={(e) => setUserId(e.target.value)}
+                            style={{ backgroundColor: '#708090', color: 'white' }}
+                            InputProps={{ style: { color: 'white' } }}
+                            InputLabelProps={{ style: { color: '#8AA7FF' } }}
+                            sx={{ marginRight: 2, width: 200 }} // Specific width
+                        />
+                        <Button variant="contained" color="primary" onClick={handleGetCalorieData}>
+                            Fetch Calorie Data
+                        </Button>
+                    </Box>
+                </CardContent>
+            </Card>
+    
+            <Card sx={{ width: 800, backgroundColor: '#292f35', padding: 2, marginBottom: 4 }}>
+                <CardContent>
+                    <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2, flexWrap: 'wrap' }}>
+                        <TextField
+                            label="Calorie Intake"
+                            variant="outlined"
+                            value={intakeCal}
+                            onChange={(e) => setIntakeCal(e.target.value)}
+                            style={{ backgroundColor: '#708090', color: 'white' }}
+                            InputProps={{ style: { color: 'white' } }}
+                            InputLabelProps={{ style: { color: '#8AA7FF' } }}
+                            sx={{ marginRight: 2, width: 200 }} // Specific width
+                        />
+                        <TextField
+                            label="Calories Burned"
+                            variant="outlined"
+                            value={burnedCal}
+                            onChange={(e) => setBurnedCal(e.target.value)}
+                            style={{ backgroundColor: '#708090', color: 'white' }}
+                            InputProps={{ style: { color: 'white' } }}
+                            InputLabelProps={{ style: { color: '#8AA7FF' } }}
+                            sx={{ marginRight: 2, width: 200 }} // Specific width
+                        />
+                        <TextField
+                            label="Entry Date (YYYY-MM-DD)"
+                            variant="outlined"
+                            value={entryDate}
+                            onChange={(e) => setEntryDate(e.target.value)}
+                            style={{ backgroundColor: '#708090', color: 'white' }}
+                            InputProps={{ style: { color: 'white' } }}
+                            InputLabelProps={{ style: { color: '#8AA7FF' } }}
+                            sx={{ marginRight: 2, width: 200 }} // Specific width
+                        />
+                    </Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}> {/* Added margin-top here */}
+                        <Button 
+                            variant="contained" 
+                            color="primary" 
+                            onClick={handleSubmitCalorieData} 
+                            sx={{ width: 200 }} // Match button width to other buttons
+                        >
+                            Submit Calorie Data
+                        </Button>
+                    </Box>
+                </CardContent>
+            </Card>
 
             <Typography variant="h5" sx={{ mb: 2 }}>
-                Daily Water Intake
+                Daily Calorie Data
             </Typography>
-            <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-                <LineChart
+            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+                <Box
+                    sx={{
+                        backgroundColor: '#3f51b5',
+                        color: '#ffffff',
+                        padding: '5px 10px',
+                        borderRadius: '4px',
+                        marginRight: 2, // Add some space between the boxes
+                    }}
+                >
+                    Intake
+                </Box>
+                <Box
+                    sx={{
+                        backgroundColor: '#ff9800',
+                        color: '#ffffff',
+                        padding: '5px 10px',
+                        borderRadius: '4px',
+                    }}
+                >
+                    Burned
+                </Box>
+            </Box>
+            <Box sx={{ display: 'flex', justifyContent: 'center', mx: 2 }}>
+                <BarChart
                     xAxis={[{ scaleType: 'band', data: daysOfWeek }]}
-                    series={[{ data }]} // Use the fetched data for the line chart
+                    series={[
+                        { name: 'Intake', data: data.intake, color: '#3f51b5' }, // Color for intake
+                        { name: 'Burned', data: data.burned, color: '#ff9800' }   // Orange color for burned
+                    ]}
                     height={300}
-                    margin={{ left: 30, right: 30, top: 30, bottom: 30 }}
+                    margin={{ left: 50, right: 30, top: 30, bottom: 30 }}
+                    grid={{ vertical: true, horizontal: true }}
+                    sx={(theme) => ({
+                        [`.${axisClasses.root}`]: {
+                            [`.${axisClasses.tick}, .${axisClasses.line}`]: {
+                                stroke: '#fff',
+                                strokeWidth: 2,
+                            },
+                            [`.${axisClasses.tickLabel}`]: {
+                                fill: '#fff',
+                            },
+                        },
+                    })}
+                />
+            </Box>
+
+            <Typography variant="h5" sx={{ mb: 2, marginTop: 4 }}>
+                Daily Calorie Difference
+            </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'center', mx: 2 }}>
+                <BarChart
+                    xAxis={[{ scaleType: 'band', data: daysOfWeek }]}
+                    yAxis={[{ min: -1000, max: 1000 }]}
+                    series={[{
+                        name: 'Difference',
+                        data: data.difference,
+                        color: '#2196f3', // Color for difference
+                    }]}
+                    height={300}
+                    margin={{ left: 50, right: 30, top: 30, bottom: 30 }}
                     grid={{ vertical: true, horizontal: true }}
                     sx={(theme) => ({
                         [`.${axisClasses.root}`]: {
